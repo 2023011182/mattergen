@@ -25,7 +25,7 @@ if torch.cuda.is_available():
 
 GRAPHS_DIR    = "processed_data/graphs"  # 直接读取这里的 .pt
 MODELS_DIR    = "models"                 # 保存/加载模型文件
-BATCH_SIZE    = 32
+BATCH_SIZE    = 8  # 建议减小，避免CUDA OOM
 NUM_EPOCHS    = 50
 LEARNING_RATE = 1e-3
 HIDDEN_DIM    = 128
@@ -56,6 +56,13 @@ class GraphDataset(GeoDataset):
         pt_fname = self.file_list[idx]
         full_path = os.path.join(self.root_dir, pt_fname)
         data_obj = torch.load(full_path)  # 直接加载 Data 对象
+        # 检查y是否存在且有效
+        if not hasattr(data_obj, 'y') or data_obj.y is None or torch.numel(data_obj.y) == 0:
+            print(f"[警告] 图 {pt_fname} 缺少有效的y标签，已跳过。")
+            print(f"  y内容: {getattr(data_obj, 'y', None)}, 类型: {type(getattr(data_obj, 'y', None))}")
+            # 返回一个空图对象
+            from torch_geometric.data import Data
+            return Data()
         return data_obj
 
 # ------------- 2. CEGMessagePassing -------------
@@ -158,7 +165,8 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     total_loss=0
     total_graphs=0
     for batch_data in loader:
-        if batch_data.x.size(0)==0:
+        # 检查y是否有效
+        if batch_data.x.size(0)==0 or batch_data.y is None or torch.numel(batch_data.y)==0 or torch.all(batch_data.y==0):
             continue
         batch_data = batch_data.to(device)
 
@@ -184,7 +192,8 @@ def evaluate_model(model, loader, criterion, device):
     tgts_all =[]
     with torch.no_grad():
         for batch_data in loader:
-            if batch_data.x.size(0)==0:
+            # 检查y是否有效
+            if batch_data.x.size(0)==0 or batch_data.y is None or torch.numel(batch_data.y)==0 or torch.all(batch_data.y==0):
                 continue
             batch_data=batch_data.to(device)
             out=model(batch_data)
@@ -206,11 +215,23 @@ def evaluate_model(model, loader, criterion, device):
 # ------------- 5. main -------------
 def main():
     if not os.path.exists(GRAPHS_DIR):
+        
         print(f"[错误] 找不到 {GRAPHS_DIR}")
         return
     dataset=GraphDataset(GRAPHS_DIR)
     if dataset.len()==0:
         print(f"[错误] {GRAPHS_DIR} 下无 .pt 文件")
+        return
+
+    # 检查有效样本数
+    valid_count = 0
+    for i in range(dataset.len()):
+        data = dataset.get(i)
+        if hasattr(data, 'y') and data.y is not None and torch.numel(data.y)>0 and not torch.all(data.y==0):
+            valid_count += 1
+    print(f"[数据检查] 有效样本数: {valid_count}/{dataset.len()}")
+    if valid_count == 0:
+        print("[错误] 没有有效的y标签样本，无法训练。")
         return
 
     # 切分
@@ -226,6 +247,7 @@ def main():
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader   = DataLoader(val_ds,   batch_size=BATCH_SIZE)
     test_loader  = DataLoader(test_ds,  batch_size=BATCH_SIZE)
+    print(f"[提示] 当前batch_size={BATCH_SIZE}，如遇OOM可进一步减小。")
 
     # 确定节点/边特征维度
     sample_batch= next(iter(train_loader))

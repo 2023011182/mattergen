@@ -384,7 +384,7 @@ class CrystalDataProcessor:
                 
                 # Convert CIF to graph
                 graph = self.cif_to_graph(cif_file)
-                
+
                 if graph is not None:
                     # Add conductivity data if available
                     if not conductivity_df.empty:
@@ -393,6 +393,8 @@ class CrystalDataProcessor:
                             # Add both raw and log-transformed conductivity
                             graph.conductivity = torch.tensor([match['conductivity'].values[0]], dtype=torch.float)
                             graph.log_conductivity = torch.tensor([match['log_conductivity'].values[0]], dtype=torch.float)
+                            # 关键：加上y属性
+                            graph.y = torch.tensor([match['log_conductivity'].values[0]], dtype=torch.float)
                     
                     # Store graph with material ID as key
                     graph_data[material_id] = graph
