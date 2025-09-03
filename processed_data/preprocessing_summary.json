@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "total_processed": 321,
+  "with_conductivity": 321,
+  "without_conductivity": 0,
+  "train_size": 257,
+  "val_size": 32,
+  "test_size": 32,
+  "output_dir": "processed_data"
+}

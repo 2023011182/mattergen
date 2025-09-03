@@ -1,0 +1,8 @@
+Total files with conductivity: 321
+Training set: 257 files
+Validation set: 32 files
+Test set: 32 files
+
+Random seed: 42
+Test ratio: 0.1
+Validation ratio: 0.1
