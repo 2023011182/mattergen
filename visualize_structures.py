@@ -629,24 +629,64 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # 加载候选材料数据
-    try:
-        candidates_df = pd.read_csv(args.candidates)
-        logger.info(f"已加载{len(candidates_df)}个候选材料")
-    except Exception as e:
-        logger.error(f"无法加载候选材料CSV文件: {e}")
+    # 创建临时目录
+    temp_dir = tempfile.mkdtemp()
+    
+    # 获取项目根目录
+    project_root = Path.cwd()
+    
+    # 加载候选材料数据 - 修改以支持ZIP文件
+    candidates_df = None
+    if args.candidates.endswith('.zip'):
+        # 处理ZIP文件：提取CIF文件并创建DataFrame
+        zip_path = Path(args.candidates)
+        if not zip_path.exists():
+            logger.error(f"ZIP文件不存在: {args.candidates}")
+            return 1
+        
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                cif_files = [f for f in zip_ref.namelist() if f.endswith('.cif')]
+                if not cif_files:
+                    logger.error(f"ZIP文件中未找到CIF文件: {args.candidates}")
+                    return 1
+                
+                # 提取CIF文件到临时目录
+                extracted_paths = []
+                for cif_file in cif_files:
+                    extracted_path = Path(temp_dir) / Path(cif_file).name
+                    with zip_ref.open(cif_file) as source, open(extracted_path, 'wb') as target:
+                        target.write(source.read())
+                    extracted_paths.append(str(extracted_path))
+                
+                # 创建DataFrame
+                data = {
+                    'cif_file': extracted_paths,
+                    'formula': [Path(p).stem for p in extracted_paths],  # 使用文件名作为公式占位符
+                    'source_file': [zip_path.name] * len(extracted_paths)  # 使用ZIP文件名作为来源
+                }
+                candidates_df = pd.DataFrame(data)
+                logger.info(f"从ZIP文件加载了{len(candidates_df)}个CIF文件")
+        except Exception as e:
+            logger.error(f"处理ZIP文件时出错: {e}")
+            return 1
+    else:
+        # 原有逻辑：加载CSV文件
+        try:
+            candidates_df = pd.read_csv(args.candidates)
+            logger.info(f"已加载{len(candidates_df)}个候选材料")
+        except Exception as e:
+            logger.error(f"无法加载候选材料CSV文件: {e}")
+            return 1
+    
+    if candidates_df is None or candidates_df.empty:
+        logger.error("未找到有效的候选材料数据")
         return 1
     
     # 限制处理的结构数量
     if len(candidates_df) > args.top:
         candidates_df = candidates_df.head(args.top)
         logger.info(f"处理前{args.top}个候选材料")
-    
-    # 创建临时目录
-    temp_dir = tempfile.mkdtemp()
-    
-    # 获取项目根目录
-    project_root = Path.cwd()
     
     # 处理每个结构
     processed_count = 0
@@ -701,4 +741,4 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())
