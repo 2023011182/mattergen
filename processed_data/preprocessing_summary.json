@@ -1,8 +1,8 @@
 {
   "status": "success",
-  "total_processed": 321,
+  "total_processed": 337,
   "with_conductivity": 321,
-  "without_conductivity": 0,
+  "without_conductivity": 16,
   "train_size": 257,
   "val_size": 32,
   "test_size": 32,

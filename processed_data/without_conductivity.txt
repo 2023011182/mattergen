@@ -1,0 +1,16 @@
+graphs\gen_0.pt
+graphs\gen_1.pt
+graphs\gen_10.pt
+graphs\gen_11.pt
+graphs\gen_12.pt
+graphs\gen_13.pt
+graphs\gen_14.pt
+graphs\gen_15.pt
+graphs\gen_2.pt
+graphs\gen_3.pt
+graphs\gen_4.pt
+graphs\gen_5.pt
+graphs\gen_6.pt
+graphs\gen_7.pt
+graphs\gen_8.pt
+graphs\gen_9.pt

@@ -1,0 +1,33 @@
+data_image0
+_chemical_formula_structural       AlTiAl2TiAuNi2
+_chemical_formula_sum              "Al3 Ti2 Au1 Ni2"
+_cell_length_a       4.309161845231805
+_cell_length_b       4.309524294200193
+_cell_length_c       7.59589147567749
+_cell_angle_alpha    73.4702609409526
+_cell_angle_beta     73.5269730234404
+_cell_angle_gamma    60.00901790574629
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Al  Al1       1.0  0.6868416666984558  0.568595826625824  0.8197106122970582  1.0000
+  Ti  Ti1       1.0  0.9359868168830872  0.8179219365119934  0.0725698471069336  1.0000
+  Al  Al2       1.0  0.18832358717918396  0.06855128705501556  0.3184557259082794  1.0000
+  Al  Al3       1.0  0.3115086555480957  0.1925484836101532  0.9482856988906861  1.0000
+  Ti  Ti2       1.0  0.4353160560131073  0.3165663778781891  0.5761227011680603  1.0000
+  Au  Au1       1.0  0.8109273314476013  0.6923702955245972  0.44884574413299566  1.0000
+  Ni  Ni1       1.0  0.048360954970121384  0.9287673830986024  0.7371892929077148  1.0000
+  Ni  Ni2       1.0  0.5736451745033264  0.4553767740726471  0.1598999798297882  1.0000
