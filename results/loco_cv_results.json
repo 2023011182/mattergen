@@ -1,0 +1,110 @@
+{
+  "overall": {
+    "regression": {
+      "mae": 4.900179290771485,
+      "mae_std": 0.6484871170808245,
+      "r2": 0.5038364361838996,
+      "r2_std": 0.09418858548259602
+    },
+    "classification": {
+      "accuracy": 0.994275199345737,
+      "accuracy_std": 0.00702214380618391,
+      "mcc": 0.0,
+      "mcc_std": 0.0,
+      "f1": 0.0,
+      "f1_std": 0.0
+    }
+  },
+  "per_cluster": [
+    {
+      "cluster": 0,
+      "test_size": 73,
+      "metrics": {
+        "regression": {
+          "mae": 4.066625118255615,
+          "r2": 0.5925095242565679,
+          "mse": 32.38564682006836
+        },
+        "classification": {
+          "accuracy": 0.9863013698630136,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "mcc": 0.0
+        }
+      }
+    },
+    {
+      "cluster": 1,
+      "test_size": 52,
+      "metrics": {
+        "regression": {
+          "mae": 4.844029426574707,
+          "r2": 0.38397315987718106,
+          "mse": 40.58388137817383
+        },
+        "classification": {
+          "accuracy": 1.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "mcc": 0.0
+        }
+      }
+    },
+    {
+      "cluster": 2,
+      "test_size": 67,
+      "metrics": {
+        "regression": {
+          "mae": 4.3249053955078125,
+          "r2": 0.630211384944587,
+          "mse": 31.415023803710938
+        },
+        "classification": {
+          "accuracy": 0.9850746268656716,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "mcc": 0.0
+        }
+      }
+    },
+    {
+      "cluster": 3,
+      "test_size": 76,
+      "metrics": {
+        "regression": {
+          "mae": 5.614065647125244,
+          "r2": 0.42772538108973945,
+          "mse": 51.868812561035156
+        },
+        "classification": {
+          "accuracy": 1.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "mcc": 0.0
+        }
+      }
+    },
+    {
+      "cluster": 4,
+      "test_size": 53,
+      "metrics": {
+        "regression": {
+          "mae": 5.651270866394043,
+          "r2": 0.4847627307514224,
+          "mse": 54.36531448364258
+        },
+        "classification": {
+          "accuracy": 1.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "mcc": 0.0
+        }
+      }
+    }
+  ]
+}
