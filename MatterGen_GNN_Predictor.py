@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data
-from GNN import CEGNet  # 导入GNN模型
+from GNN import LiteCEGNet
 
 # 1. 配置路径
 graph_dir = "transformed_data/mattergen_graphs/"  # 转换后的图数据目录
@@ -59,7 +59,7 @@ if not dataset:
 loader = DataLoader(dataset, batch_size=32, shuffle=False)
 
 # 3. 加载GNN模型（需与训练时的结构一致）
-model = CEGNet(
+model = LiteCEGNet(
     node_in_features=node_in_dim,
     edge_in_features=edge_in_dim,
     hidden_dim=128,  # 需与训练时一致
