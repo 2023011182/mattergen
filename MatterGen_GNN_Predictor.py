@@ -7,7 +7,7 @@ from GNN import LiteCEGNet
 
 # 1. 配置路径
 graph_dir = "transformed_data/mattergen_graphs/"  # 转换后的图数据目录
-model_path = "models/best_cegnet_model.pt"  # 训练好的GNN模型路径
+model_path = "models/best_regression_model.pt"  # 训练好的GNN模型路径
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 2. 加载图数据集（直接加载.pt文件，忽略y标签）
