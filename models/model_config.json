@@ -1,0 +1,27 @@
+{
+    "node_in_features": 5,
+    "edge_in_features": 1,
+    "hidden_dim": 128,
+    "output_dim": 1,
+    "dropout_rate": 0.3,
+    "cutoff": 5.0,
+    "target_scaler_type": "MinMaxScaler",
+    "atom_feature_missing_strategy": "mean_imputation",
+    "base_features": [
+        "Z",
+        "group",
+        "row",
+        "block",
+        "X",
+        "atomic_radius",
+        "ionization_energy",
+        "electron_affinity"
+    ],
+    "numerical_feature_names": [
+        "Z",
+        "X",
+        "atomic_radius",
+        "ionization_energy",
+        "electron_affinity"
+    ]
+}
