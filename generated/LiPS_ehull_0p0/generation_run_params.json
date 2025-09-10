@@ -1,0 +1,10 @@
+{
+  "pretrained_model": "chemical_system_energy_above_hull",
+  "batch_size": 1,
+  "guidance_scale": 7.0,
+  "record_trajectories": false,
+  "mattergen_repo_path": "D:/\u5b66\u4e60\u76f8\u5173\u6587\u6863/\u5927\u4e8c\u4e0b/\u4eba\u5de5\u667a\u80fd\u4e0e\u6d41\u7a0b\u5de5\u4e1a\u5bfc\u8bba/\u5927\u4f5c\u4e1a/LithiumVision/mattergen/mattergen",
+  "num_samples": 1,
+  "chem_sys": "Li-P-S",
+  "e_hull": 0.0
+}

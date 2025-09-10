@@ -1,0 +1,10 @@
+{
+  "pretrained_model": "chemical_system_energy_above_hull",
+  "batch_size": 1,
+  "guidance_scale": 7.0,
+  "record_trajectories": false,
+  "mattergen_repo_path": "D:/学习相关文档/大二下/人工智能与流程工业导论/大作业/LithiumVision/mattergen",
+  "num_samples": 5,
+  "chem_sys": "Li-P-S",
+  "e_hull": 0.05
+}

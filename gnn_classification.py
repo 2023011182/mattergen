@@ -48,9 +48,9 @@ WEIGHT_DECAY  = 5e-4  # 增加权重衰减
 NODE_BOTTLENECK_DIM = 8
 L1_GATE_COEF        = 8e-4  # 增加L1正则化强度
 
-# 分类任务配置 - 重点：使用数据中位数作为阈值，确保类别平衡
-USE_MEDIAN_THRESHOLD = True  # 使用中位数作为阈值，确保正负样本各半
-CLASSIFICATION_THRESHOLD = None  # 若USE_MEDIAN_THRESHOLD=True，则自动计算
+# 分类任务配置 - 核心修改：固定阈值为-6，禁用自动计算
+USE_MEDIAN_THRESHOLD = False  # 无需使用中位数
+CLASSIFICATION_THRESHOLD = -6  # 固定分类阈值为-6（关键修改）
 OPTIMIZE_FOR          = "f1"  # 'f1' | 'accuracy' | 'mcc'
 EARLY_STOP_PATIENCE   = 30    # 增加早停耐心
 EARLY_STOP_MIN_DELTA  = 1e-4
@@ -91,17 +91,20 @@ class GraphDataset(GeoDataset):
         super().__init__()
         self.root_dir = root_dir
         self.use_median_threshold = use_median_threshold
-        self.threshold = threshold
+        # 核心修改：强制使用传入的固定阈值（此处为-6），不自动计算
+        self.threshold = threshold if threshold is not None else CLASSIFICATION_THRESHOLD
+        if self.threshold is None:
+            raise ValueError("分类阈值必须指定（当前配置为-6）")
+        
         self.file_list: List[str] = []
         self.compositions: List[str] = []
-        self.all_ys = []  # 存储所有y值用于计算中位数
+        self.all_ys = []  # 仅用于统计类别分布，不用于计算阈值
         
         if os.path.isdir(root_dir):
             all_files = sorted([f for f in os.listdir(root_dir) if f.endswith(".pt")])
             skipped = 0
-            
-            # 第一遍：收集所有有效的y值
-            temp_files = []
+
+            # 遍历文件：筛选有效数据 + 收集y值用于类别统计
             for f in all_files:
                 full = os.path.join(root_dir, f)
                 try:
@@ -111,6 +114,7 @@ class GraphDataset(GeoDataset):
                     skipped += 1
                     continue
 
+                # 校验数据有效性（必须有节点特征x和标签y）
                 has_x = (
                     hasattr(data_obj, "x")
                     and isinstance(data_obj.x, torch.Tensor)
@@ -125,32 +129,25 @@ class GraphDataset(GeoDataset):
                 )
 
                 if has_x and has_y:
-                    temp_files.append(f)
-                    self.all_ys.append(data_obj.y.item())
+                    self.file_list.append(f)
+                    self.all_ys.append(data_obj.y.item())  # 收集y值用于统计类别
+                    # 提取材料成分（用于后续追踪）
+                    comp = os.path.splitext(f)[0].split('_')[0] if '_' in f else f[:-3]
+                    self.compositions.append(comp)
                 else:
                     skipped += 1
             
-            # 确定分类阈值（使用中位数确保类别平衡）
-            if self.use_median_threshold and self.all_ys:
-                self.threshold = np.median(self.all_ys)
-                print(f"[数据集] 使用中位数作为分类阈值: {self.threshold:.4f}")
-            elif self.threshold is None:
-                raise ValueError("必须指定分类阈值或启用中位数阈值模式")
+            # 打印固定阈值信息（确认使用-6）
+            print(f"[数据集] 使用固定分类阈值: {self.threshold:.4f}")
             
-            # 第二遍：筛选文件并创建数据集
-            for f in temp_files:
-                self.file_list.append(f)
-                comp = os.path.splitext(f)[0].split('_')[0] if '_' in f else f[:-3]
-                self.compositions.append(comp)
-                
+            # 统计类别分布（基于固定阈值-6）
+            if self.all_ys:
+                class0 = sum(1 for y in self.all_ys if y < self.threshold)  # y < -6 → 类别0
+                class1 = len(self.all_ys) - class0  # y ≥ -6 → 类别1
+                print(f"[数据集] 类别分布: 类别0={class0} ({class0/len(self.all_ys):.1%}), 类别1={class1} ({class1/len(self.all_ys):.1%})")
+            
             if skipped:
                 print(f"[数据集] 已过滤 {skipped} 个无效文件，保留 {len(self.file_list)} 个。")
-            
-            # 统计类别分布
-            if self.all_ys:
-                class0 = sum(1 for y in self.all_ys if y < self.threshold)
-                class1 = len(self.all_ys) - class0
-                print(f"[数据集] 类别分布: 类别0={class0} ({class0/len(self.all_ys):.1%}), 类别1={class1} ({class1/len(self.all_ys):.1%})")
         else:
             print(f"[警告] 目录不存在: {root_dir}")
     
@@ -168,9 +165,9 @@ class GraphDataset(GeoDataset):
         if not hasattr(data_obj, 'x') or not isinstance(data_obj.x, torch.Tensor) or data_obj.x.dim() != 2:
             raise RuntimeError(f"[错误] 文件 {pt_fname} 的节点特征无效。")
             
-        # 生成平衡分类标签 (1 if y >= threshold else 0)
+        # 核心修改：基于固定阈值-6生成分类标签
         y_val = data_obj.y.item()
-        data_obj.y_cls = torch.tensor(1.0 if y_val >= self.threshold else 0.0, dtype=torch.float)
+        data_obj.y_cls = torch.tensor(1.0 if y_val >= self.threshold else 0.0, dtype=torch.float)  # y≥-6→1，否则→0
         data_obj.material_id = os.path.splitext(pt_fname)[0]
         return data_obj
     
@@ -291,19 +288,17 @@ class ClassificationCEGNet(nn.Module):
         return {"pred_cls": pred_cls, "gates": gates}
 
     def get_loss(self, pred: Dict[str, torch.Tensor], data: Data) -> torch.Tensor:
-        # 计算类别权重，处理可能的类别不平衡
-        # 确保计算结果为张量，并避免除零错误
+        # 计算类别权重，处理类别不平衡（基于固定阈值-6的分布）
         num_neg = torch.sum(data.y_cls == 0)
         num_pos = torch.sum(data.y_cls == 1)
         
-        # 使用torch.where处理除零情况，确保结果是张量
+        # 避免除零错误，在目标设备上创建张量
         pos_weight = torch.where(
             num_pos > 0,
             num_neg / num_pos,
-            torch.tensor(1.0, device=data.y_cls.device)  # 直接在目标设备上创建张量
+            torch.tensor(1.0, device=data.y_cls.device)
         )
         
-        # 现在pos_weight已经是张量，且已在正确设备上，无需再调用to()
         # 分类损失（带权重的二元交叉熵）
         cls_loss = F.binary_cross_entropy_with_logits(pred["pred_cls"], data.y_cls.view(-1), pos_weight=pos_weight)
         # L1正则化门控
@@ -340,7 +335,7 @@ def train_epoch(model, loader, optimizer, device, scheduler=None):
     
     # 计算指标
     avg_loss = total_loss / len(loader.dataset)
-    preds_binary = [1 if p >= 0.5 else 0 for p in all_preds]
+    preds_binary = [1 if p >= 0.5 else 0 for p in all_preds]  # 预测概率阈值仍为0.5（与分类标签阈值-6无关）
     metrics = {
         "accuracy": accuracy_score(all_labels, preds_binary),
         "precision": precision_score(all_labels, preds_binary, labels=[0, 1], zero_division=0),
@@ -370,7 +365,7 @@ def evaluate(model, loader, device):
     
     # 计算指标
     avg_loss = total_loss / len(loader.dataset)
-    preds_binary = [1 if p >= 0.5 else 0 for p in all_preds]
+    preds_binary = [1 if p >= 0.5 else 0 for p in all_preds]  # 预测概率阈值为0.5（固定）
     metrics = {
         "accuracy": accuracy_score(all_labels, preds_binary),
         "precision": precision_score(all_labels, preds_binary, labels=[0, 1], zero_division=0),
@@ -460,18 +455,18 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"使用设备: {device}")
 
-    # 1. 加载数据集
+    # 1. 加载数据集 - 传入固定阈值-6（与全局配置一致）
     full_dataset = GraphDataset(
         GRAPHS_DIR, 
         use_median_threshold=USE_MEDIAN_THRESHOLD,
-        threshold=CLASSIFICATION_THRESHOLD
+        threshold=CLASSIFICATION_THRESHOLD  # 此处为-6
     )
     
     if len(full_dataset) == 0:
         print(f"错误：在 {GRAPHS_DIR} 中未找到有效数据，请检查路径。")
         return
     
-    # 检查类别分布是否合理
+    # 检查类别分布是否合理（基于固定阈值-6）
     all_labels = [full_dataset.get(i).y_cls.item() for i in range(len(full_dataset))]
     class_counts = np.bincount(all_labels)
     print(f"总数据集类别分布: 类别0={class_counts[0]}, 类别1={class_counts[1]}")
@@ -515,13 +510,13 @@ def main():
     print(f"\n交叉验证平均F1分数: {np.mean(fold_f1_scores):.4f} ± {np.std(fold_f1_scores):.4f}")
     print(f"最佳模型F1分数: {best_f1:.4f}")
 
-    # 保存训练历史和分类阈值
+    # 保存训练历史和固定阈值-6
     history = {"cv_f1_scores": fold_f1_scores, "mean_cv_f1": np.mean(fold_f1_scores), 
-               "best_f1": best_f1, "threshold": full_dataset.get_threshold()}
+               "best_f1": best_f1, "threshold": full_dataset.get_threshold()}  # threshold会保存为-6
     with open(os.path.join(RESULTS_DIR, "classification_history.json"), "w") as f:
         json.dump(history, f, default=_np_json_default, indent=2)
     print(f"训练完成，历史记录保存至 {RESULTS_DIR}/classification_history.json")
-    print(f"使用的分类阈值为: {full_dataset.get_threshold():.4f}")
+    print(f"使用的分类阈值为: {full_dataset.get_threshold():.4f}（固定值）")
     
     # 输出最佳模型的F1分数
     print(f"最佳模型的F1分数: {best_f1:.4f}")
