@@ -81,7 +81,7 @@ loader = DataLoader(dataset, batch_size=32, shuffle=False)
 model = CEGNet(
     node_in_features=node_in_dim,
     edge_in_features=edge_in_dim,
-    hidden_dim=128,
+    hidden_dim=32, 
     output_dim=1,
     dropout_rate=0.3
 ).to(device)

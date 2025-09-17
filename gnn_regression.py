@@ -85,7 +85,7 @@ BATCH_SIZE = 32
 NUM_EPOCHS = 200 # Increased epochs as is typical
 LEARNING_RATE = 0.001
 DROPOUT_RATE = 0.3 # Slightly increased dropout
-HIDDEN_DIM = 128
+HIDDEN_DIM = 32
 OUTPUT_DIM = 1  # Predicting a single conductivity value
 
 # Preprocessing options
@@ -1488,7 +1488,7 @@ def main_train(data_root="processed_data", models_dir=MODELS_DIR, batch_size=BAT
             from data_loader import create_data_loaders, get_feature_dimensions
             logger.info("从当前目录成功导入数据加载模块")
         except ImportError:
-            from LithiumVision.data_loader import create_data_loaders, get_feature_dimensions
+            from data_loader import create_data_loaders, get_feature_dimensions
             logger.info("从LithiumVision目录成功导入数据加载模块")
     except ImportError:
         logger.warning("无法导入数据加载模块，尝试添加路径")
@@ -1599,7 +1599,7 @@ def main_train(data_root="processed_data", models_dir=MODELS_DIR, batch_size=BAT
             best_epoch = epoch
             torch.save(model.state_dict(), model_save_path)
             print(f"在验证损失为 {best_val_loss:.4f} 时保存最佳模型到 {model_save_path}")
-    
+        torch.cuda.empty_cache()
     print(f"\n训练完成。最佳验证损失: {best_val_loss:.4f}，在轮次 {best_epoch+1}")
     
     # 在测试集上进行最终评估
@@ -1708,7 +1708,7 @@ def predict_conductivity_from_cif(cif_filepath, model_dir=MODELS_DIR):
         model = CEGNet(
             node_in_features=config.get('node_in_features', 0), # Use .get with default 0 for robustness
             edge_in_features=config.get('edge_in_features', 1), # Default to 1 as distance is expected
-            hidden_dim=config.get('hidden_dim', 128),
+            hidden_dim=config.get('hidden_dim',32),
             output_dim=config.get('output_dim', 1),
             dropout_rate=0.0 # Always use 0.0 dropout for inference
         ).to(device)
@@ -1896,7 +1896,7 @@ if __name__ == "__main__":
                 print("从当前目录成功导入数据处理模块")
             except ImportError:
                 try:
-                    from LithiumVision.data_processess import CrystalDataProcessor
+                    from data_process import CrystalDataProcessor
                     print("从LithiumVision目录成功导入数据处理模块")
                 except ImportError:
                     import sys
